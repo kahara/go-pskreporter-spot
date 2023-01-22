@@ -18,9 +18,9 @@ jobs:
       - name: Install and initialize dependencies
         run: |
           go get .
-          echo 'The "Build Registry" step of vmware/go-ipfix ran automatically'
+          echo '"Build Registry" step of vmware/go-ipfix did already run somehow, sometime in the past'
           echo 'See: https://github.com/vmware/go-ipfix/blob/0564a236246aa5203398a3994cd783eccae58222/README.md#build-registry'
-          find /home/runner/go/
+          ls -l ${HOME}/go/pkg/mod/github.com/vmware/go-ipfix*/pkg/registry
 
       - name: Build
         run: go build -v ./...
