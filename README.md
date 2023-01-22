@@ -11,7 +11,7 @@ section for an overview about the system.
 There are unit tests, and these can be run with:
 
 ```console
-go test ./...
+go test .
 ```
 
 To manually check that spot packets get ingested and processed by PSK Reporter, get
