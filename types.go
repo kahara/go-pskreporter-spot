@@ -21,7 +21,7 @@ type Spot struct {
 	Sender    Sender
 	Receiver  Receiver
 	Frequency uint64 // (30351.5) "The frequency of the transmission in Hertz"
-	SNR       uint8  // (30351.6 "The signal to noise ration of the transmission. Normally 1 byte"
+	SNR       int8   // (30351.6) "The signal to noise ration of the transmission. Normally 1 byte"
 	IMD       uint8  // (30351.7) "The intermodulation distortion of the transmission. Normally 1 byte."
 	Software  string // (30351.8) "The name and version of the decoding software"
 	Antenna   string // (30351.9) "A freeform description of the receiving antenna"
