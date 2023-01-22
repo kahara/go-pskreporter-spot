@@ -22,7 +22,9 @@ and run:
 docker compose up
 ```
 
-This generates a few fake spots and sends them towards PSK Reporter's testing endpoint at
+This
+[generates](./cmd/fakespot)
+a few fake spots and sends them towards PSK Reporter's testing endpoint at
 `pskreporter.info:14739`, then exits. The results can (hopefully!) be seen on PSK Reporter's
 [packet analysis](https://pskreporter.info/cgi-bin/psk-analysis.pl)
 page.
