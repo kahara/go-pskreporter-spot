@@ -1,1 +1,1 @@
-package spot_test
+package spot
