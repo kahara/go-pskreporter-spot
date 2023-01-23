@@ -8,18 +8,10 @@ type Station struct {
 	Locator  string // (30351.{3,4}) "The locator of the {sender,receiver} of the transmission"
 }
 
-type Sender struct {
-	Station
-}
-
-type Receiver struct {
-	Station
-}
-
 type Spot struct {
 	Flowstart uint32 // (150) "The time of the transmission (absolute seconds since 1/1/1970)"
-	Sender    Sender
-	Receiver  Receiver
+	Sender    Station
+	Receiver  Station
 	Frequency uint64 // (30351.5) "The frequency of the transmission in Hertz"
 	SNR       int8   // (30351.6) "The signal to noise ration of the transmission. Normally 1 byte"
 	IMD       uint8  // (30351.7) "The intermodulation distortion of the transmission. Normally 1 byte."
