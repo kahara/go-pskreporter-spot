@@ -40,10 +40,17 @@ func NewSpotter() *Spotter {
 	return &spotter
 }
 
+// Feed a Spot to be sent later
 func (s *Spotter) Feed(spot Spot) {
 	s.queue <- spot
 }
 
+// Create an IPFIX record of accumulated Spots
+func (s *Spot) ipfix() []byte {
+	return []byte{0}
+}
+
+// Send Spots
 func (s *Spotter) flush() {
 	log.Debug().Msg("Flushing spots")
 }
