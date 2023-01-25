@@ -16,10 +16,7 @@ jobs:
           cache: true
 
       - name: Install and initialize dependencies
-        run: |
-          go get .
-          echo '"Build Registry" step of vmware/go-ipfix did already run somehow, sometime in the past'
-          echo 'See: https://github.com/vmware/go-ipfix/blob/0564a236246aa5203398a3994cd783eccae58222/README.md#build-registry'
+        run: go get .
 
       - name: Build
         run: go build -v ./...
