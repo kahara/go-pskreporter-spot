@@ -2,71 +2,28 @@ package spot
 
 import (
 	"github.com/rs/zerolog/log"
-	"github.com/vmware/go-ipfix/pkg/entities"
-	"github.com/vmware/go-ipfix/pkg/exporter"
-	"github.com/vmware/go-ipfix/pkg/registry"
 	"time"
 )
 
 const (
-	IANAEnterpriseID = "30351"
-	QueueSize        = 10000
-	MaxSpots         = 3
-	LingerTime       = time.Duration(3 * time.Second)
+	QueueSize  = 10000
+	MaxSpots   = 3
+	LingerTime = time.Duration(3 * time.Second)
 )
 
 type Spotter struct {
-	queue       chan Spot
-	lastFlush   time.Time
-	exporter    *exporter.ExportingProcess
-	templateID  uint16
-	templateSet entities.Set
-	done        chan bool
+	queue     chan Spot
+	lastFlush time.Time
+	done      chan bool
 }
 
 func NewSpotter() *Spotter {
-	// Set up IPFIX export
-	export, err := exporter.InitExportingProcess(exporter.ExporterInput{
-		CollectorAddress:    "127.0.0.1:14739",
-		CollectorProtocol:   "udp",
-		ObservationDomainID: 0,
-		TempRefTimeout:      0,
-		TLSClientConfig:     nil,
-		IsIPv6:              false,
-		SendJSONRecord:      false,
-		JSONBufferLen:       0,
-		CheckConnInterval:   0,
-	})
-	if err != nil {
-		log.Fatal().Err(err)
-	}
-
-	// Compose Spotter itself
+	// Compose a Spotter
 	spotter := Spotter{
-		queue:       make(chan Spot, QueueSize),
-		lastFlush:   time.Now(),
-		exporter:    export,
-		templateID:  export.NewTemplateID(),
-		templateSet: entities.NewSet(false),
-		done:        make(chan bool, 1),
+		queue:     make(chan Spot, QueueSize),
+		lastFlush: time.Now(),
+		done:      make(chan bool, 1),
 	}
-
-	// Do the IPFIX boilerplate dance
-	err = spotter.templateSet.PrepareSet(entities.Template, spotter.templateID)
-	if err != nil {
-		log.Fatal().Err(err)
-	}
-
-	element, err := registry.GetInfoElement("flowStartSeconds", registry.IANAEnterpriseID)
-	if err != nil {
-		log.Fatal().Err(err)
-	}
-
-	log.Info().Msgf("%+v", element)
-
-	flowStartSeconds, _ := entities.DecodeAndCreateInfoElementWithValue(element, nil)
-
-	spotter.templateSet.AddRecord([]entities.InfoElementWithValue{flowStartSeconds}, spotter.templateID)
 
 	// Flush Spots if there are many of them, or if some time has passed since last flush
 	go func() {
@@ -80,7 +37,6 @@ func NewSpotter() *Spotter {
 				}
 			case <-spotter.done: // Attempt to shut down cleanly when done
 				spotter.flush()
-				spotter.exporter.CloseConnToCollector()
 				return
 			}
 		}
