@@ -11,7 +11,14 @@ const (
 	LingerTime = time.Duration(3 * time.Second)
 )
 
+// From https://pskreporter.info/pskdev.html
+// IPFIX attribute IDs in parenthesis.
+
 type Spotter struct {
+	Receiver  Station
+	Software  string // (30351.8) "The name and version of the decoding software"
+	Antenna   string // (30351.9) "A freeform description of the receiving antenna"
+	ID        string // (30351.12) "Random string that identifies the sender. This may be used in the future as a primitive form of security."
 	queue     chan Spot
 	lastFlush time.Time
 	done      chan bool
