@@ -9,6 +9,9 @@ import (
 
 const (
 	ReceiverCallsign = "N0CALL"
+	ReceiverLocator  = "JJ00AA"
+	ReceiverAntenna  = "Dipole"
+	ReceiverSoftware = "go-pskreporter-spot fakespot v0"
 )
 
 //var ( // Because there are no const arrays
@@ -39,24 +42,12 @@ const (
 func main() {
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 
-	spotter := spot.NewSpotter()
+	spotter := spot.NewSpotter(ReceiverCallsign, ReceiverLocator, ReceiverAntenna, ReceiverSoftware, "")
 
 	log.Info().Msgf("%+v", spotter)
 
 	for {
 		time.Sleep(1 * time.Second)
-		spotter.Feed(spot.Spot{
-			Flowstart: 0,
-			Sender:    spot.Station{},
-			Receiver:  spot.Station{},
-			Frequency: 0,
-			SNR:       0,
-			IMD:       0,
-			Software:  "",
-			Antenna:   "",
-			Mode:      "",
-			Source:    0,
-			ID:        "",
-		})
+		spotter.Feed(spot.NewSpot("N1CALL", "IH37OG", 50314350, 23, 8, "FT8", 1, uint32(time.Now().UTC().Unix())))
 	}
 }
