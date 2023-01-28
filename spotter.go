@@ -5,6 +5,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"math/rand"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -15,6 +16,8 @@ const (
 	InitialHeaderProbability float32 = 4.0
 	HeaderProbabilityBackoff float32 = 0.65
 	HeaderProbabilityLimit   float32 = 0.1
+	IPv4MaxPayloadBytes              = 576 - 60 - 8  // Minimum MTU - IP header - UDP header
+	IPv6MaxPayloadBytes              = 1280 - 40 - 8 // TODO Verify that this really is a reasonable assumption
 )
 
 // From https://pskreporter.info/pskdev.html
@@ -32,6 +35,7 @@ type Spotter struct {
 	queue                chan *Spot
 	lastFlush            time.Time
 	hostport             string
+	maxPayloadBytes      int
 	done                 chan bool
 }
 
@@ -52,7 +56,15 @@ func NewSpotter(hostport string, callsign string, locator string, antennaInforma
 		queue:                make(chan *Spot, QueueSize),
 		lastFlush:            time.Now(),
 		hostport:             hostport,
+		maxPayloadBytes:      0,
 		done:                 make(chan bool, 1),
+	}
+
+	// Make some hopefully correct assumptions about how many bytes can be crammed into each packet without hitting MTU
+	if strings.Count(spotter.hostport, ":") == 1 {
+		spotter.maxPayloadBytes = IPv4MaxPayloadBytes
+	} else {
+		spotter.maxPayloadBytes = IPv6MaxPayloadBytes
 	}
 
 	// Generate a random 30351.12 "persistentIdentifier" if none was provided
@@ -139,9 +151,6 @@ func (s *Spotter) flush(conn net.Conn) error {
 		datagram    []byte
 	)
 
-	// Get receiver and sender records, if any
-	records = IPFIXRecords(s)
-
 	// Include descriptors with steadily decreasing probability, down to a limit
 	// (RFC 5103 says they SHOULD always be sent when transport is UDP, but PSK Reporter has a different preference.)
 	if rand.Float32() < s.headerProbability {
@@ -154,6 +163,9 @@ func (s *Spotter) flush(conn net.Conn) error {
 		s.headerProbability = HeaderProbabilityLimit
 	}
 
+	// Get receiver and sender records, if any
+	records = IPFIXRecords(s, len(descriptors)+HeaderLength)
+
 	// Combine everything into a packet
 	datagram = IPFIX(s.sequenceNumber, s.randomIdentifier, descriptors, records)
 
@@ -164,6 +176,7 @@ func (s *Spotter) flush(conn net.Conn) error {
 		return err
 	}
 
+	// FIXME related to the above remark about failing writes
 	s.sequenceNumber += 1
 
 	return nil
@@ -171,5 +184,5 @@ func (s *Spotter) flush(conn net.Conn) error {
 
 func (s *Spotter) Close() {
 	s.done <- true
-	// FIXME add logic to handle the shutdown cleanly
+	// FIXME maybe(?) add logic to handle the shutdown cleanly
 }

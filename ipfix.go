@@ -105,13 +105,30 @@ func IPFIXDescriptors(spotter *Spotter) []byte {
 	return descriptors
 }
 
-func IPFIXRecords(spotter *Spotter) []byte {
+func IPFIXRecords(spotter *Spotter, spent int) []byte {
 	var (
-		records []byte
-		//padding = 0
+		records    []byte
+		maxPayload = spotter.maxPayloadBytes - spent - 4 - 4 // Leave margin for paddings, too
+		padding    = 0
 	)
 
-	// Add padding for 4-byte alignment; 4 - (length % 4)
+	// Receiver record
+
+	// XXX remember to subtract receiver records size from maxPayload
+
+	// Add padding for 4-byte alignment
+	padding = 4 - (len(records) % 4)
+	for i := 0; i < padding; i++ {
+		records = append(records, 0)
+	}
+
+	// Sender records
+
+	// Pad the sender records, too
+	padding = 4 - (len(records) % 4)
+	for i := 0; i < padding; i++ {
+		records = append(records, 0)
+	}
 
 	return records
 }
