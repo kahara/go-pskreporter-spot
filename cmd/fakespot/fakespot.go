@@ -42,7 +42,7 @@ const (
 func main() {
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 
-	spotter := spot.NewSpotter(ReceiverCallsign, ReceiverLocator, ReceiverAntenna, ReceiverSoftware, "")
+	spotter := spot.NewSpotter("localhost:4739", ReceiverCallsign, ReceiverLocator, ReceiverAntenna, ReceiverSoftware, "", spot.SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart)
 
 	log.Info().Msgf("%+v", spotter)
 

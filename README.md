@@ -6,6 +6,8 @@ See PSK Reporter's
 ["for Developers"](https://pskreporter.info/pskdev.html)
 section for an overview about the system.
 
+**FIXME** link to a blog post
+
 ## Testing
 
 There are unit tests, and these can be run with:

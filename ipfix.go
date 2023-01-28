@@ -1,10 +1,20 @@
 package spot
 
+import (
+	"encoding/binary"
+	"time"
+)
+
 // See https://pskreporter.info/pskdev.html
+
+const (
+	HeaderLength = 16
+)
+
 var (
-	Header         = []byte{0x00, 0x0A}
-	ReceiverHeader = []byte{0x99, 0x92}
-	SenderHeader   = []byte{0x99, 0x93}
+	Header               = []byte{0x00, 0x0A} // "Version" in RFC 5101
+	ReceiverRecordHeader = []byte{0x99, 0x92}
+	SenderRecordHeader   = []byte{0x99, 0x93}
 
 	ReceiverDescriptor_CallsignLocatorSoftware = []byte{
 		0x00, 0x03, 0x00, 0x24, 0x99, 0x92, 0x00, 0x03, 0x00, 0x00,
@@ -60,3 +70,48 @@ var (
 		0x00, 0x96, 0x00, 0x04,
 	}
 )
+
+func IPFIX(sequenceNumber uint32, observationDomain uint32, descriptors []byte, records []byte) []byte {
+	var (
+		ipfix  []byte
+		header [16]byte
+	)
+
+	// Construct an IPFIX header with message length, timestamp, sequence number, and observation domain
+	header[0] = Header[0]
+	header[1] = Header[1]
+	binary.BigEndian.PutUint16(header[2:], uint16(HeaderLength+len(descriptors)+len(records)))
+	binary.BigEndian.PutUint32(header[4:], uint32(time.Now().UTC().Unix()))
+	binary.BigEndian.PutUint32(header[8:], sequenceNumber)
+	binary.BigEndian.PutUint32(header[12:], observationDomain)
+
+	// Concatenate everything
+	ipfix = append(ipfix, header[:]...)   // Header is an array...
+	ipfix = append(ipfix, descriptors...) // ...and these are slices
+	ipfix = append(ipfix, records...)
+
+	return ipfix
+}
+
+func IPFIXDescriptors(spotter *Spotter) []byte {
+	var descriptors []byte
+
+	if spotter.antennaInformation == "" {
+		descriptors = append(descriptors, ReceiverDescriptor_CallsignLocatorSoftware...)
+	} else {
+		descriptors = append(descriptors, ReceiverDescriptor_CallsignLocatorSoftwareAntenna...)
+	}
+
+	return descriptors
+}
+
+func IPFIXRecords(spotter *Spotter) []byte {
+	var (
+		records []byte
+		//padding = 0
+	)
+
+	// Add padding for 4-byte alignment; 4 - (length % 4)
+
+	return records
+}

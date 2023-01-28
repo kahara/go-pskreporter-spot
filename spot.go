@@ -3,6 +3,13 @@ package spot
 // From https://pskreporter.info/pskdev.html
 // IPFIX attribute IDs in parenthesis.
 
+const (
+	SpotKind_CallsignFrequencyModeSourceFlowstart = iota
+	SpotKind_CallsignFrequencyModeSourceLocatorFlowstart
+	SpotKind_CallsignFrequencySNRIMDModeSourceFlowstart
+	SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart
+)
+
 type Station struct {
 	Callsign string // (30351.{1,2}) "The callsign of the {sender,receiver} of the transmission"
 	Locator  string // (30351.{3,4}) "The locator of the {sender,receiver} of the transmission"
