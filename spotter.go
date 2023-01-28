@@ -158,6 +158,7 @@ func (s *Spotter) flush(conn net.Conn) error {
 	datagram = IPFIX(s.sequenceNumber, s.randomIdentifier, descriptors, records)
 
 	// Send packet
+	// FIXME figure out how to handle potentially unsent data when writing fails
 	_, err = conn.Write(datagram)
 	if err != nil {
 		return err
