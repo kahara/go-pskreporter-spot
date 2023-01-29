@@ -13,8 +13,11 @@ const (
 
 var (
 	Header               = []byte{0x00, 0x0A} // "Version" in RFC 5101
-	ReceiverRecordHeader = []byte{0x99, 0x92}
+	ReceiverRecordHeader = []byte{0x99, 0x92} // "Set ID" in RFC 5101(?)
 	SenderRecordHeader   = []byte{0x99, 0x93}
+
+	// TODO figure out what is the "theoretical" maximum size of receiver record,
+	// TODO for making the decision to get an item from the queue
 
 	ReceiverDescriptor_CallsignLocatorSoftware = []byte{
 		0x00, 0x03, 0x00, 0x24, 0x99, 0x92, 0x00, 0x03, 0x00, 0x00,
@@ -94,27 +97,40 @@ func IPFIX(sequenceNumber uint32, observationDomain uint32, descriptors []byte, 
 }
 
 func IPFIXDescriptors(spotter *Spotter) []byte {
-	var descriptors []byte
-
 	if spotter.antennaInformation == "" {
-		descriptors = append(descriptors, ReceiverDescriptor_CallsignLocatorSoftware...)
+		return ReceiverDescriptor_CallsignLocatorSoftware
 	} else {
-		descriptors = append(descriptors, ReceiverDescriptor_CallsignLocatorSoftwareAntenna...)
+		return ReceiverDescriptor_CallsignLocatorSoftwareAntenna
 	}
-
-	return descriptors
 }
 
 func IPFIXRecords(spotter *Spotter, spent int) []byte {
 	var (
-		records    []byte
-		maxPayload = spotter.maxPayloadBytes - spent - 4 - 4 // Leave margin for paddings, too
-		padding    = 0
+		records          []byte
+		payloadBytesLeft = spotter.maxPayloadBytes - spent - 3 - 3 // Leave margin for paddings, too
+		header           [4]byte
+		record           []byte
+		padding          = 0
 	)
 
-	// Receiver record
+	// Receiver record; callsign, locator, decoderSoftware, (optionally) antennaInformation
+	// FIXME limit the strings' lengths
+	record = append(record, uint8(len(spotter.receiver.Callsign)))
+	record = append(record, []byte(spotter.receiver.Callsign)...)
+	record = append(record, uint8(len(spotter.receiver.Locator)))
+	record = append(record, []byte(spotter.receiver.Locator)...)
+	record = append(record, uint8(len(spotter.decoderSoftware)))
+	record = append(record, []byte(spotter.decoderSoftware)...)
+	if spotter.antennaInformation != "" {
+		record = append(record, uint8(len(spotter.antennaInformation)))
+		record = append(record, []byte(spotter.antennaInformation)...)
+	}
 
-	// XXX remember to subtract receiver records size from maxPayload
+	header[0] = ReceiverRecordHeader[0]
+	header[1] = ReceiverRecordHeader[1]
+	binary.BigEndian.PutUint16(header[2:], uint16(len(record)))
+	records = append(records, header[:]...)
+	records = append(records, record...)
 
 	// Add padding for 4-byte alignment
 	padding = 4 - (len(records) % 4)
@@ -122,7 +138,15 @@ func IPFIXRecords(spotter *Spotter, spent int) []byte {
 		records = append(records, 0)
 	}
 
+	payloadBytesLeft = payloadBytesLeft - len(records)
+
 	// Sender records
+	record = []byte{}
+
+	header[0] = SenderRecordHeader[0]
+	header[1] = SenderRecordHeader[1]
+	binary.BigEndian.PutUint16(header[2:], uint16(0)) // XXX encode the length
+	records = append(records, header[:]...)
 
 	// Pad the sender records, too
 	padding = 4 - (len(records) % 4)
