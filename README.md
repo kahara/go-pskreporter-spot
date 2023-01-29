@@ -1,6 +1,7 @@
 # go-pskreporter-spot
 
-Go library for submitting spots to pskreporter.info
+Go library for submitting spots to
+[pskreporter.info](https://pskreporter.info/).
 
 See PSK Reporter's
 ["for Developers"](https://pskreporter.info/pskdev.html)
@@ -10,7 +11,7 @@ section for an overview about the system.
 
 ## Testing
 
-There are unit tests, and these can be run with:
+**FIXME** There ~~are~~ will be unit tests, and these ~~can~~ will be run with:
 
 ```console
 go test .

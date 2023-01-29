@@ -9,15 +9,14 @@ import (
 
 const (
 	HeaderLength = 16
+	// TODO figure out what is the "theoretical" maximum size of sender record,
+	// TODO for making the decision to get an item from the queue
 )
 
 var (
 	Header               = []byte{0x00, 0x0A} // "Version" in RFC 5101
 	ReceiverRecordHeader = []byte{0x99, 0x92} // "Set ID" in RFC 5101(?)
 	SenderRecordHeader   = []byte{0x99, 0x93}
-
-	// TODO figure out what is the "theoretical" maximum size of receiver record,
-	// TODO for making the decision to get an item from the queue
 
 	ReceiverDescriptor_CallsignLocatorSoftware = []byte{
 		0x00, 0x03, 0x00, 0x24, 0x99, 0x92, 0x00, 0x03, 0x00, 0x00,
@@ -109,28 +108,29 @@ func IPFIXRecords(spotter *Spotter, spent int) []byte {
 		records          []byte
 		payloadBytesLeft = spotter.maxPayloadBytes - spent - 3 - 3 // Leave margin for paddings, too
 		header           [4]byte
-		record           []byte
+		receiverRecord   []byte
+		senderRecords    []byte
 		padding          = 0
 	)
 
 	// Receiver record; callsign, locator, decoderSoftware, (optionally) antennaInformation
 	// FIXME limit the strings' lengths
-	record = append(record, uint8(len(spotter.receiver.Callsign)))
-	record = append(record, []byte(spotter.receiver.Callsign)...)
-	record = append(record, uint8(len(spotter.receiver.Locator)))
-	record = append(record, []byte(spotter.receiver.Locator)...)
-	record = append(record, uint8(len(spotter.decoderSoftware)))
-	record = append(record, []byte(spotter.decoderSoftware)...)
+	receiverRecord = append(receiverRecord, uint8(len(spotter.receiver.Callsign)))
+	receiverRecord = append(receiverRecord, []byte(spotter.receiver.Callsign)...)
+	receiverRecord = append(receiverRecord, uint8(len(spotter.receiver.Locator)))
+	receiverRecord = append(receiverRecord, []byte(spotter.receiver.Locator)...)
+	receiverRecord = append(receiverRecord, uint8(len(spotter.decoderSoftware)))
+	receiverRecord = append(receiverRecord, []byte(spotter.decoderSoftware)...)
 	if spotter.antennaInformation != "" {
-		record = append(record, uint8(len(spotter.antennaInformation)))
-		record = append(record, []byte(spotter.antennaInformation)...)
+		receiverRecord = append(receiverRecord, uint8(len(spotter.antennaInformation)))
+		receiverRecord = append(receiverRecord, []byte(spotter.antennaInformation)...)
 	}
 
 	header[0] = ReceiverRecordHeader[0]
 	header[1] = ReceiverRecordHeader[1]
-	binary.BigEndian.PutUint16(header[2:], uint16(len(record)))
+	binary.BigEndian.PutUint16(header[2:], uint16(len(receiverRecord)))
 	records = append(records, header[:]...)
-	records = append(records, record...)
+	records = append(records, receiverRecord...)
 
 	// Add padding for 4-byte alignment
 	padding = 4 - (len(records) % 4)
@@ -141,7 +141,44 @@ func IPFIXRecords(spotter *Spotter, spent int) []byte {
 	payloadBytesLeft = payloadBytesLeft - len(records)
 
 	// Sender records
-	record = []byte{}
+Senders:
+	for {
+		var (
+			spot         *Spot
+			senderRecord []byte
+		)
+
+		select {
+		case s := <-spotter.queue:
+			spot = s
+		default:
+			break Senders
+		}
+
+		// Callsign and frequency
+		senderRecord = append(senderRecord, uint8(len(spot.sender.Callsign)))
+		senderRecord = append(senderRecord, []byte(spot.sender.Callsign)...)
+		senderRecord = append(senderRecord, []byte{0, 0, 0, 0}...)
+		binary.BigEndian.PutUint32(senderRecord[len(senderRecord)-4:], uint32(spot.frequency))
+
+		if spotter.spotKind == SpotKind_CallsignFrequencyModeSourceLocatorFlowstart || spotter.spotKind == SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart {
+			senderRecord = append(senderRecord, uint8(len(spot.sender.Locator)))
+			senderRecord = append(senderRecord, []byte(spot.sender.Locator)...)
+		}
+
+		// Timestamp of beginning of transmission
+		senderRecord = append(senderRecord, []byte{0, 0, 0, 0}...)
+		binary.BigEndian.PutUint32(senderRecord[len(senderRecord)-4:], spot.flowStartSeconds)
+
+		// If it starts to look like adding more would make the packet's size go over MTU, put the spot back into queue
+		// TODO see comment about "theoretical" maximum size of sender record earlier in the file; this could be smarter
+		if (len(header) + len(receiverRecord)) > payloadBytesLeft {
+			spotter.queue <- spot
+			break Senders
+		} else {
+			senderRecords = append(senderRecords, senderRecord...)
+		}
+	}
 
 	header[0] = SenderRecordHeader[0]
 	header[1] = SenderRecordHeader[1]
