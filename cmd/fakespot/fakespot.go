@@ -47,7 +47,7 @@ func main() {
 	log.Info().Msgf("%+v", spotter)
 
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
 		spotter.Feed(spot.NewSpot("N1CALL", "IH37OG", 50314350, 23, 8, "FT8", 1, uint32(time.Now().UTC().Unix())))
 		spotter.Feed(spot.NewSpot("N2CALL", "II38OG", 50314450, 0, 9, "FT4", 1, uint32(time.Now().UTC().Unix())))
 		spotter.Feed(spot.NewSpot("N3CALL", "IJ39OG", 50314550, -42, 10, "FT8", 1, uint32(time.Now().UTC().Unix())))

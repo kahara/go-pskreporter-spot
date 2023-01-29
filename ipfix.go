@@ -2,6 +2,7 @@ package spot
 
 import (
 	"encoding/binary"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -151,6 +152,7 @@ Senders:
 		select {
 		case s := <-spotter.queue:
 			spot = s
+			log.Info().Msgf("%+v", spot)
 		default:
 			break Senders
 		}
@@ -161,12 +163,22 @@ Senders:
 		senderRecord = append(senderRecord, []byte{0, 0, 0, 0}...)
 		binary.BigEndian.PutUint32(senderRecord[len(senderRecord)-4:], uint32(spot.frequency))
 
+		// Add noise and distortion if these are supposed to be available
+		if spotter.spotKind == SpotKind_CallsignFrequencySNRIMDModeSourceFlowstart || spotter.spotKind == SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart {
+			senderRecord = append(senderRecord, byte(spot.snr))
+			senderRecord = append(senderRecord, byte(spot.imd))
+		}
+
+		// Some for locator
 		if spotter.spotKind == SpotKind_CallsignFrequencyModeSourceLocatorFlowstart || spotter.spotKind == SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart {
 			senderRecord = append(senderRecord, uint8(len(spot.sender.Locator)))
 			senderRecord = append(senderRecord, []byte(spot.sender.Locator)...)
 		}
 
-		// Timestamp of beginning of transmission
+		// Mode, source, and timestamp of beginning of transmission
+		senderRecord = append(senderRecord, uint8(len(spot.mode)))
+		senderRecord = append(senderRecord, []byte(spot.mode)...)
+		senderRecord = append(senderRecord, byte(spot.informationSource))
 		senderRecord = append(senderRecord, []byte{0, 0, 0, 0}...)
 		binary.BigEndian.PutUint32(senderRecord[len(senderRecord)-4:], spot.flowStartSeconds)
 
@@ -174,6 +186,7 @@ Senders:
 		// TODO see comment about "theoretical" maximum size of sender record earlier in the file; this could be smarter
 		if (len(header) + len(receiverRecord)) > payloadBytesLeft {
 			spotter.queue <- spot
+			log.Info().Msg("skipping")
 			break Senders
 		} else {
 			senderRecords = append(senderRecords, senderRecord...)
@@ -182,8 +195,9 @@ Senders:
 
 	header[0] = SenderRecordHeader[0]
 	header[1] = SenderRecordHeader[1]
-	binary.BigEndian.PutUint16(header[2:], uint16(0)) // XXX encode the length
+	binary.BigEndian.PutUint16(header[2:], uint16(len(senderRecords)))
 	records = append(records, header[:]...)
+	records = append(records, senderRecords...)
 
 	// Pad the sender records, too
 	padding = 4 - (len(records) % 4)
