@@ -41,6 +41,9 @@ type Spotter struct {
 }
 
 func NewSpotter(hostport string, callsign string, locator string, antennaInformation string, decoderSoftware string, persistentIdentifier string, spotKind int) *Spotter {
+	// For randomIdentifier
+	rand.Seed(time.Now().UnixNano())
+
 	// Compose a Spotter
 	spotter := Spotter{
 		receiver: Station{
