@@ -97,11 +97,7 @@ func IPFIX(sequenceNumber uint32, observationDomain uint32, descriptors []byte, 
 }
 
 func IPFIXDescriptors(spotter *Spotter) []byte {
-	if spotter.antennaInformation == "" {
-		return ReceiverDescriptor_CallsignLocatorSoftware
-	} else {
-		return ReceiverDescriptor_CallsignLocatorSoftwareAntenna
-	}
+	return spotter.ipfixDescriptors
 }
 
 func IPFIXRecords(spotter *Spotter, spent int) []byte {

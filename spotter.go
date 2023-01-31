@@ -32,6 +32,7 @@ type Spotter struct {
 	sequenceNumber       uint32
 	headerProbability    float32
 	spotKind             int
+	ipfixDescriptors     []byte
 	queue                chan *Spot
 	lastFlush            time.Time
 	hostport             string
@@ -53,11 +54,29 @@ func NewSpotter(hostport string, callsign string, locator string, antennaInforma
 		sequenceNumber:       0,
 		headerProbability:    InitialHeaderProbability,
 		spotKind:             spotKind,
+		ipfixDescriptors:     []byte{},
 		queue:                make(chan *Spot, QueueSize),
 		lastFlush:            time.Now(),
 		hostport:             hostport,
 		maxPayloadBytes:      0,
 		done:                 make(chan bool, 1),
+	}
+
+	// Construct IPFIX descriptors
+	if spotter.antennaInformation == "" {
+		spotter.ipfixDescriptors = append(spotter.ipfixDescriptors, ReceiverDescriptor_CallsignLocatorSoftware...)
+	} else {
+		spotter.ipfixDescriptors = append(spotter.ipfixDescriptors, ReceiverDescriptor_CallsignLocatorSoftwareAntenna...)
+	}
+
+	if spotter.spotKind == SpotKind_CallsignFrequencyModeSourceFlowstart {
+		spotter.ipfixDescriptors = append(spotter.ipfixDescriptors, SenderDescriptor_CallsignFrequencyModeSourceFlowstart...)
+	} else if spotter.spotKind == SpotKind_CallsignFrequencyModeSourceLocatorFlowstart {
+		spotter.ipfixDescriptors = append(spotter.ipfixDescriptors, SenderDescriptor_CallsignFrequencyModeSourceLocatorFlowstart...)
+	} else if spotter.spotKind == SpotKind_CallsignFrequencySNRIMDModeSourceFlowstart {
+		spotter.ipfixDescriptors = append(spotter.ipfixDescriptors, SenderDescriptor_CallsignFrequencySNRIMDModeSourceFlowstart...)
+	} else if spotter.spotKind == SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart {
+		spotter.ipfixDescriptors = append(spotter.ipfixDescriptors, SenderDescriptor_CallsignFrequencySNRIMDModeSourceLocatorFlowstart...)
 	}
 
 	// Make some hopefully correct assumptions about how many bytes can be crammed into each packet without hitting MTU
