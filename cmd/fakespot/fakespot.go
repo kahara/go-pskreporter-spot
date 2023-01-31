@@ -11,7 +11,7 @@ const (
 	ReceiverCallsign = "N0CALL"
 	ReceiverLocator  = "JJ00AA"
 	ReceiverAntenna  = "Dipole"
-	ReceiverSoftware = "go-pskreporter-spot fakespot v0"
+	ReceiverSoftware = "fakespot v0"
 )
 
 //var ( // Because there are no const arrays
@@ -42,14 +42,21 @@ const (
 func main() {
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 
+	//spotter := spot.NewSpotter("localhost:4739", ReceiverCallsign, ReceiverLocator, ReceiverAntenna, ReceiverSoftware, "", spot.SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart)
+
+	// !ATTENTION! this is sending to pskreporter.info:14739
+	//spotter := spot.NewSpotter("report.pskreporter.info:14739", ReceiverCallsign, ReceiverLocator, ReceiverAntenna, ReceiverSoftware, "", spot.SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart)
+
 	spotter := spot.NewSpotter("localhost:4739", ReceiverCallsign, ReceiverLocator, ReceiverAntenna, ReceiverSoftware, "", spot.SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart)
 
 	log.Info().Msgf("%+v", spotter)
 
-	for {
-		time.Sleep(5 * time.Second)
-		spotter.Feed(spot.NewSpot("N1CALL", "IH37OG", 50314350, 23, 8, "FT8", 1, uint32(time.Now().UTC().Unix())))
-		spotter.Feed(spot.NewSpot("N2CALL", "II38OG", 50314450, 0, 9, "FT4", 1, uint32(time.Now().UTC().Unix())))
-		spotter.Feed(spot.NewSpot("N3CALL", "IJ39OG", 50314550, -42, 10, "FT8", 1, uint32(time.Now().UTC().Unix())))
-	}
+	//for {
+	//time.Sleep(5 * time.Second)
+	spotter.Feed(spot.NewSpot("N1CALL", "IH37OG", 50314350, 23, 8, "FT8", 1, uint32(time.Now().UTC().Unix())))
+	spotter.Feed(spot.NewSpot("N2CALL", "II38OG", 50314450, 0, 9, "FT4", 1, uint32(time.Now().UTC().Unix())))
+	spotter.Feed(spot.NewSpot("N3CALL", "IJ39OG", 50314550, -42, 10, "FT8", 1, uint32(time.Now().UTC().Unix())))
+
+	time.Sleep(10 * time.Second)
+	//}
 }
