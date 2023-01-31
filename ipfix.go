@@ -182,7 +182,7 @@ Senders:
 
 		// Beginning of transmission
 		senderRecord = append(senderRecord, []byte{0, 0, 0, 0}...)
-		binary.BigEndian.PutUint32(senderRecord[len(senderRecord)-5:], spot.flowStartSeconds)
+		binary.BigEndian.PutUint32(senderRecord[len(senderRecord)-4:], spot.flowStartSeconds)
 
 		// If it starts to look like adding more would make the packet's size go over MTU, put the spot back into queue
 		// TODO see comment about "theoretical" maximum size of sender record earlier in the file; this could be smarter
