@@ -107,6 +107,7 @@ func IPFIXRecords(spotter *Spotter, spent int) []byte {
 		header           [4]byte
 		receiverRecord   []byte
 		senderRecords    []byte
+		length           = 0
 		padding          = 0
 	)
 
@@ -123,19 +124,22 @@ func IPFIXRecords(spotter *Spotter, spent int) []byte {
 		receiverRecord = append(receiverRecord, []byte(spotter.antennaInformation)...)
 	}
 
+	length = len(header) + len(receiverRecord)
+	padding = 4 - (length % 4)
+	length += padding
+
 	header[0] = ReceiverRecordHeader[0]
 	header[1] = ReceiverRecordHeader[1]
-	binary.BigEndian.PutUint16(header[2:], uint16(len(receiverRecord)))
+	binary.BigEndian.PutUint16(header[2:], uint16(length))
 	records = append(records, header[:]...)
 	records = append(records, receiverRecord...)
 
 	// Add padding for 4-byte alignment
-	padding = 4 - (len(records) % 4)
 	for i := 0; i < padding; i++ {
 		records = append(records, 0)
 	}
 
-	payloadBytesLeft = payloadBytesLeft - len(records)
+	payloadBytesLeft = payloadBytesLeft - length
 
 	// Sender records
 Senders:
@@ -165,18 +169,20 @@ Senders:
 			senderRecord = append(senderRecord, byte(spot.imd))
 		}
 
-		// Some for locator
+		// Mode and source
+		senderRecord = append(senderRecord, uint8(len(spot.mode)))
+		senderRecord = append(senderRecord, []byte(spot.mode)...)
+		senderRecord = append(senderRecord, byte(spot.informationSource))
+
+		// Locator
 		if spotter.spotKind == SpotKind_CallsignFrequencyModeSourceLocatorFlowstart || spotter.spotKind == SpotKind_CallsignFrequencySNRIMDModeSourceLocatorFlowstart {
 			senderRecord = append(senderRecord, uint8(len(spot.sender.Locator)))
 			senderRecord = append(senderRecord, []byte(spot.sender.Locator)...)
 		}
 
-		// Mode, source, and timestamp of beginning of transmission
-		senderRecord = append(senderRecord, uint8(len(spot.mode)))
-		senderRecord = append(senderRecord, []byte(spot.mode)...)
-		senderRecord = append(senderRecord, byte(spot.informationSource))
+		// Beginning of transmission
 		senderRecord = append(senderRecord, []byte{0, 0, 0, 0}...)
-		binary.BigEndian.PutUint32(senderRecord[len(senderRecord)-4:], spot.flowStartSeconds)
+		binary.BigEndian.PutUint32(senderRecord[len(senderRecord)-5:], spot.flowStartSeconds)
 
 		// If it starts to look like adding more would make the packet's size go over MTU, put the spot back into queue
 		// TODO see comment about "theoretical" maximum size of sender record earlier in the file; this could be smarter
@@ -189,14 +195,17 @@ Senders:
 		}
 	}
 
+	length = len(header) + len(senderRecords)
+	padding = 4 - (length % 4)
+	length += padding
+
 	header[0] = SenderRecordHeader[0]
 	header[1] = SenderRecordHeader[1]
-	binary.BigEndian.PutUint16(header[2:], uint16(len(senderRecords)))
+	binary.BigEndian.PutUint16(header[2:], uint16(length))
 	records = append(records, header[:]...)
 	records = append(records, senderRecords...)
 
 	// Pad the sender records, too
-	padding = 4 - (len(records) % 4)
 	for i := 0; i < padding; i++ {
 		records = append(records, 0)
 	}
