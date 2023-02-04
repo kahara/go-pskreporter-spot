@@ -2,24 +2,39 @@ name: Go
 
 on: [push]
 
+defaults:
+  runs-on: ubuntu-22.04
+
 jobs:
   test:
-    runs-on: ubuntu-22.04
-
     steps:
       - uses: actions/checkout@v3
-
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.19
           cache: true
-
       - name: Install and initialize dependencies
         run: go get .
-
       - name: Build
         run: go build -v ./...
-
       - name: Test
         run: go test -v .
+
+  build:
+    needs:
+      - test
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run:
+          echo "building"
+
+  push:
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v3
+      - name: Push
+        run:
+          echo "pushing"
