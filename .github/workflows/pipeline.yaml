@@ -2,10 +2,10 @@ name: Go
 
 on: [push]
 
-defaults:
-  runs-on: ubuntu-22.04
-
 jobs:
+  defaults:
+    runs-on: ubuntu-22.04
+
   test:
     steps:
       - uses: actions/checkout@v3
