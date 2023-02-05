@@ -17,21 +17,12 @@ section for an overview about the system.
 go test .
 ```
 
-To manually check that spot packets get ingested and processed by PSK Reporter, get
+There's an "integration" test that attempts to verify that
+[PSKReporter/rs-pskreporter-demo](https://github.com/PSKReporter/rs-pskreporter-demo)
+can ingest the generated spots correctly. Get
 [Compose v2](https://github.com/docker/compose)
 and run:
 
 ```console
 docker compose up
 ```
-
-This
-[generates](./cmd/fakespot)
-a few fake spots and sends them towards PSK Reporter's testing endpoint at
-`pskreporter.info:14739`, then exits. The results can (hopefully!) be seen on PSK Reporter's
-[packet analysis](https://pskreporter.info/cgi-bin/psk-analysis.pl)
-page.
-
-The composition includes an instance of
-[tcpdump(1)](https://www.tcpdump.org/)
-which dumps all traffic going to `14739/udp`.
