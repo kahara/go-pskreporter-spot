@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	TimescaleDBConnectionString = "postgres://postgres:password@localhost"
+	TimescaleDBConnectionString = "postgres://postgres:password@timescaledb"
 	ReportsQuery                = "SELECT * FROM report;"
-	ReceiverHostport            = "localhost:4739"
+	ReceiverHostport            = "receiver:4739"
 	FakespotCount               = 100
 	FakespotCallsign            = "N0CALL"
 	FakespotLocator             = "JJ00OG"
