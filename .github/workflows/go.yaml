@@ -17,4 +17,6 @@ jobs:
       - name: Unit test
         run: go test -v .
       - name: Integration test
-        run: go test -v - .
+        run: |
+          docker compose build
+          docker compose up --exit-code-from integration-test
