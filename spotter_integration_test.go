@@ -68,17 +68,19 @@ func TestSpotter(t *testing.T) {
 	spotter = NewSpotter(ReceiverHostport, FakespotCallsign, FakespotLocator, FakespotAntennaInformation, FakespotDecoderSoftware, "", FakespotSpotKind)
 
 	for i := 0; i < FakespotCount; i++ {
-		// TODO add variety to reports
-		spotter.Feed(NewSpot("N1CALL", "II00OG", 50313650, -23, 42, "FT8", 1, uint32(time.Now().UTC().Unix())))
+		// TODO make reports random
+		spotter.Feed(NewSpot("N1CALL", "II00OG", 50313650+uint64(i), -23, 42, "FT8", 1, uint32(time.Now().UTC().Unix())))
+		// TODO record (hashes of) reports' values
 	}
 
+	// TODO poll for expected number of rows
 	time.Sleep(30 * time.Second)
 
 	t.Logf("Connected to database pool %+v", dbPool)
 
 	rows, err = dbPool.Query(ctx, ReportsQuery)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	t.Logf("Rows: %+v", rows)
@@ -86,11 +88,16 @@ func TestSpotter(t *testing.T) {
 	for rows.Next() {
 		var r result
 		err = rows.Scan(&r.Time, &r.SenderCallsign, &r.ReceiverCallsign, &r.SenderLocator, &r.ReceiverLocator, &r.Frequency, &r.SNR, &r.IMD, &r.DecoderSoftware, &r.AntennaInformation, &r.Mode, &r.InformationSource, &r.PersistentIdentifier)
+
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
+
+		// TODO remove result from recorded hashes
 		results = append(results, r)
 	}
+
+	// TODO expect no hashes remaining
 
 	t.Logf("%+v", results)
 }
