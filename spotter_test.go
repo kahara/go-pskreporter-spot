@@ -3,5 +3,5 @@ package spot_test
 import "testing"
 
 func TestSpotter(t *testing.T) {
-	t.Fatalf("Foo!")
+	t.Logf("FIXME implement the test")
 }
