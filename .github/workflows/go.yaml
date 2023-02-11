@@ -1,0 +1,34 @@
+name: Go
+
+on: [push]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+          cache: true
+      - name: Install and initialize dependencies
+        run: go get .
+      - name: Unit test
+        run: go test -v .
+      - name: Log in to registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN_READONLY }}
+      - name: Integration test
+        run: |
+          docker compose build
+          docker compose up --exit-code-from integration-test
