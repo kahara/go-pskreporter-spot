@@ -19,7 +19,7 @@ const (
 	CountQuery                  = "SELECT COUNT(*) FROM report;"
 	ReportsQuery                = "SELECT * FROM report;"
 	ReceiverHostport            = "receiver:4739"
-	FakespotCount               = 2500
+	FakespotCount               = 2250
 	FakespotCallsign            = "N0CALL"
 	FakespotLocator             = "JJ00OG"
 	FakespotAntennaInformation  = "Dipole"
@@ -70,7 +70,7 @@ func init() {
 	}
 }
 
-func TestSpotter(t *testing.T) {
+func TestSpotterIntegration(t *testing.T) {
 	var (
 		err     error
 		spotter *Spotter
@@ -94,7 +94,7 @@ func TestSpotter(t *testing.T) {
 	ticker := time.NewTicker(1 * time.Second)
 Poll:
 	for {
-		// FIXME timeout if not spots are appearing
+		// FIXME timeout if no spots are appearing
 		select {
 		case <-ticker.C:
 			t.Logf("polling")

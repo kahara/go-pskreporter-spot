@@ -24,5 +24,6 @@ can ingest the generated spots correctly. Get
 and run:
 
 ```console
-docker compose up
+docker compose build \
+    && docker compose up --exit-code-from integration-test
 ```

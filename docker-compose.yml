@@ -21,11 +21,14 @@ services:
       redis:
         condition: service_healthy
     environment:
+      RUST_LOG: pskreporter_receiver=trace
       POSTGRES_URL: postgres://postgres:password@timescaledb
       REDIS_URL: redis://redis/
     command: pskreporter-receiver
     ports:
-      - 4739:4739
+      - 4739:4739/udp
+      - 4739:4739/tcp
+      - 9180:9180
 
   parser:
     image: ghcr.io/pskreporter/rs-pskreporter-demo:latest
@@ -35,8 +38,11 @@ services:
       redis:
         condition: service_healthy
     environment:
+      RUST_LOG: pskreporter=trace
       POSTGRES_URL: postgres://postgres:password@timescaledb
       REDIS_URL: redis://redis/
+    ports:
+      - 9182:9182
 
   integration-test:
     build:
