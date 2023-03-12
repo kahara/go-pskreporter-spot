@@ -11,8 +11,8 @@ import (
 
 const (
 	QueueSize                        = 10000
-	MaxSpots                         = 3
-	LingerTime                       = time.Duration(3 * time.Second)
+	MaxSpots                         = 25
+	LingerTime                       = time.Duration(300 * time.Second)
 	InitialHeaderProbability float32 = 4.0
 	HeaderProbabilityBackoff float32 = 0.65
 	HeaderProbabilityLimit   float32 = 0.1

@@ -76,7 +76,6 @@ func TestSpotterIntegration(t *testing.T) {
 		spotter *Spotter
 		hashes  [][32]byte
 		rows    pgx.Rows
-		results []report
 	)
 
 	spotter = NewSpotter(ReceiverHostport, FakespotCallsign, FakespotLocator, FakespotAntennaInformation, FakespotDecoderSoftware, "", FakespotSpotKind)
@@ -128,10 +127,10 @@ Poll:
 			t.Fatal(err)
 		}
 
+		// TODO check that data made the roundtrip intact
 		t.Logf("%+v", r)
 
 		// TODO remove result from recorded hashes
-		results = append(results, r)
 	}
 
 	// TODO expect no hashes remaining
