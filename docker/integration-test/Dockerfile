@@ -1,6 +1,7 @@
 FROM golang:1.19-bullseye
 
 WORKDIR /workdir
+COPY go.mod go.sum /workdir/
+RUN go mod download
 COPY . .
-RUN go get .
 ENTRYPOINT ["go", "test", "-v", "-tags", "integration", "." ]
