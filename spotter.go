@@ -38,6 +38,7 @@ type Spotter struct {
 	hostport             string
 	maxPayloadBytes      int
 	done                 chan bool
+	doneAck              chan bool
 }
 
 func NewSpotter(hostport string, callsign string, locator string, antennaInformation string, decoderSoftware string, persistentIdentifier string, spotKind int) *Spotter {
@@ -63,6 +64,7 @@ func NewSpotter(hostport string, callsign string, locator string, antennaInforma
 		hostport:             hostport,
 		maxPayloadBytes:      0,
 		done:                 make(chan bool, 1),
+		doneAck:              make(chan bool, 1),
 	}
 
 	// Construct IPFIX descriptors
@@ -143,11 +145,11 @@ func NewSpotter(hostport string, callsign string, locator string, antennaInforma
 						}
 						spotter.lastFlush = time.Now()
 					}
-				case <-spotter.done: // Attempt to shut down cleanly when done
-					err = spotter.flush(conn)
-					if err != nil {
-						break
-					}
+				case <-spotter.done:
+					// Attempt to shut down cleanly when done; this may or may not get everything written out in time
+					_ = spotter.flush(conn)
+					_ = conn.Close()
+					spotter.doneAck <- true
 					return
 				}
 			}
@@ -206,5 +208,8 @@ func (s *Spotter) flush(conn net.Conn) error {
 
 func (s *Spotter) Close() {
 	s.done <- true
-	// FIXME maybe(?) add logic to handle the shutdown cleanly
+	select {
+	case <-s.doneAck:
+		log.Debug().Str("callsign", s.receiver.Callsign).Msg("Connection to reporter closed")
+	}
 }
