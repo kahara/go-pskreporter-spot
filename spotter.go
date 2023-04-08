@@ -2,6 +2,7 @@ package spot
 
 import (
 	"github.com/dchest/uniuri"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog/log"
 	"math/rand"
 	"net"
@@ -37,11 +38,12 @@ type Spotter struct {
 	lastFlush            time.Time
 	hostport             string
 	maxPayloadBytes      int
+	packetMetric         *prometheus.CounterVec
 	done                 chan bool
 	doneAck              chan bool
 }
 
-func NewSpotter(hostport string, callsign string, locator string, antennaInformation string, decoderSoftware string, persistentIdentifier string, spotKind int) *Spotter {
+func NewSpotter(hostport string, callsign string, locator string, antennaInformation string, decoderSoftware string, persistentIdentifier string, spotKind int, packetMetric *prometheus.CounterVec) *Spotter {
 	// For randomIdentifier
 	rand.Seed(time.Now().UnixNano())
 
@@ -63,6 +65,7 @@ func NewSpotter(hostport string, callsign string, locator string, antennaInforma
 		lastFlush:            time.Now(),
 		hostport:             hostport,
 		maxPayloadBytes:      0,
+		packetMetric:         packetMetric,
 		done:                 make(chan bool, 1),
 		doneAck:              make(chan bool, 1),
 	}
@@ -196,6 +199,9 @@ func (s *Spotter) flush(conn net.Conn) error {
 	// Send packet
 	// FIXME figure out how to handle potentially unsent data when writing fails
 	_, err = conn.Write(datagram)
+	if s.packetMetric != nil {
+		s.packetMetric.WithLabelValues(conn.LocalAddr().Network(), conn.RemoteAddr().String()).Inc()
+	}
 	if err != nil {
 		return err
 	}

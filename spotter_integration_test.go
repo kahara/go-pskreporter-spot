@@ -78,7 +78,7 @@ func TestSpotterIntegration(t *testing.T) {
 		rows    pgx.Rows
 	)
 
-	spotter = NewSpotter(ReceiverHostport, FakespotCallsign, FakespotLocator, FakespotAntennaInformation, FakespotDecoderSoftware, "", FakespotSpotKind)
+	spotter = NewSpotter(ReceiverHostport, FakespotCallsign, FakespotLocator, FakespotAntennaInformation, FakespotDecoderSoftware, "", FakespotSpotKind, nil)
 
 	for i := 0; i < FakespotCount; i++ {
 		// TODO make reports random
