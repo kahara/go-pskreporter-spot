@@ -1,0 +1,53 @@
+version: '3.9'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb-ha:pg14-latest
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+
+  redis:
+    image: redis:7.0-bullseye
+    healthcheck:
+      test: "[ $$(redis-cli ping) = 'PONG' ]"
+
+  receiver:
+    image: ghcr.io/pskreporter/rs-pskreporter-demo:latest
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      RUST_LOG: pskreporter_receiver=trace
+      POSTGRES_URL: postgres://postgres:password@timescaledb
+      REDIS_URL: redis://redis/
+    command: pskreporter-receiver
+    ports:
+      - 4739:4739/udp
+      - 4739:4739/tcp
+      - 9180:9180
+
+  parser:
+    image: ghcr.io/pskreporter/rs-pskreporter-demo:latest
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      RUST_LOG: pskreporter=trace
+      POSTGRES_URL: postgres://postgres:password@timescaledb
+      REDIS_URL: redis://redis/
+    ports:
+      - 9182:9182
+
+  integration-test:
+    build:
+      dockerfile: docker/integration-test/Dockerfile
+      context: .
+    depends_on:
+      receiver:
+        condition: service_started
