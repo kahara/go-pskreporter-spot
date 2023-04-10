@@ -17,8 +17,8 @@ const (
 	InitialHeaderProbability float32 = 4.0
 	HeaderProbabilityBackoff float32 = 0.65
 	HeaderProbabilityLimit   float32 = 0.1
-	IPv4MaxPayloadBytes              = 576 - 60 - 8  // Minimum MTU - IP header - UDP header
-	IPv6MaxPayloadBytes              = 1280 - 40 - 8 // TODO Verify that this really is a reasonable assumption
+	IPv4MaxPayloadBytes              = 576 - 60 - 8 - 20 // Minimum MTU - IP header - UDP header - additional headroom
+	IPv6MaxPayloadBytes              = 1280 - 40 - 8     // TODO Verify that this really is a reasonable assumption
 )
 
 // From https://pskreporter.info/pskdev.html
