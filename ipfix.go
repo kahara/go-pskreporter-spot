@@ -186,7 +186,7 @@ Senders:
 
 		// If it starts to look like adding more would make the packet's size go over MTU, put the spot back into queue
 		// TODO see comment about "theoretical" maximum size of sender record earlier in the file; this could be smarter
-		if (len(header) + len(receiverRecord)) > payloadBytesLeft {
+		if (len(header) + len(senderRecords)) > payloadBytesLeft {
 			spotter.queue <- spot
 			log.Info().Msg("skipping")
 			break Senders
